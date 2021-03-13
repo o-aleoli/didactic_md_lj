@@ -1,0 +1,53 @@
+#number of particles
+variable npart equal 10
+
+units lj
+dimension 2
+atom_style atomic
+boundary p p p
+neighbor 0.5 bin
+neigh_modify every 1 delay 0 check yes
+
+# define 2D box region
+region box block -10 10 -10 10 -0.1 0.1
+
+#create the simulation box with one type of particle
+create_box 1 box
+
+#put z=0 all the time
+fix 2d all enforce2d
+
+#put particles with type 1 randomly into the box
+create_atoms 1 random ${npart} 324523 box
+
+#all particles has mass 1
+mass * 1
+
+#Soft pair interaction between all particles
+pair_style lj/cut 2.8
+pair_coeff * * 1 1.1 2.8
+
+#velocity distribution corresponding to a temperature of 2.0
+velocity all create 1.1 34234123 dist gaussian
+
+#minimize energy first to avoid overlapping particles
+minimize 1e-4 1e-4 1000 1000
+reset_timestep 0
+
+#integrate Newtons equation of motion with stochastic kicks and friction
+#the kicks and friction model the effect of temperature
+
+fix integrator all nve
+
+# Dump to for Ovito post processing 
+dump 1 all xyz 1 2D_lj_lammps.dump
+
+#output time step, temperature, average kinetic and potential energy
+thermo_style custom step temp ke pe
+thermo 100
+
+#time step of integrator
+timestep 0.00001
+
+#number of steps to run
+run 100000
